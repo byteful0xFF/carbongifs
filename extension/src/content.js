@@ -59,7 +59,11 @@
       background: var(--field); color: var(--muted); font: 16px/1 Arial, sans-serif; cursor: pointer;
     }
     .fav-tab[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
-    .fav-tab:focus-visible, .star:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .fav-tab:focus-visible, .star:focus-visible, .ua-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .ua-settings { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+    .ua-settings[hidden] { display: none; }
+    .ua-settings label { flex: none; color: var(--muted); }
+    .ua-select { flex: 1; min-width: 0; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--fg); font: inherit; }
     .update {
       flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px;
       border-bottom: 1px solid var(--line); color: var(--fg);
@@ -217,7 +221,39 @@
     favTab.title = 'Favorites';
     favTab.setAttribute('aria-label', 'Favorites');
     favTab.setAttribute('aria-pressed', 'false');
-    search.append(input, favTab);
+
+    const settingsTab = document.createElement('button');
+    settingsTab.type = 'button';
+    settingsTab.className = 'fav-tab';
+    settingsTab.textContent = '⚙';
+    settingsTab.title = 'User-agent settings';
+    settingsTab.setAttribute('aria-label', 'User-agent settings');
+    settingsTab.setAttribute('aria-expanded', 'false');
+
+    const uaSettings = document.createElement('div');
+    uaSettings.className = 'ua-settings';
+    uaSettings.hidden = true;
+    const uaLabel = document.createElement('label');
+    uaLabel.textContent = 'Comment user agent';
+    const uaSelect = document.createElement('select');
+    uaSelect.className = 'ua-select';
+    uaSelect.setAttribute('aria-label', 'Comment user agent');
+    const uaOptions = [
+      ['iosSafariMobile', 'iOS Safari Mobile'],
+      ['iosSafariIPad', 'iOS Safari iPad'],
+      ['androidChromeMobile', 'Android Chrome Mobile'],
+      ['windows11Chrome', 'Windows 11 Desktop Chrome (buggy)'],
+    ];
+    for (const [value, label] of uaOptions) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      uaSelect.append(option);
+    }
+    uaLabel.htmlFor = 'gcfy-ua-select';
+    uaSelect.id = 'gcfy-ua-select';
+    uaSettings.append(uaLabel, uaSelect);
+    search.append(input, favTab, settingsTab);
 
     const update = document.createElement('div');
     update.className = 'update';
@@ -241,7 +277,7 @@
     const grid = document.createElement('div');
     grid.className = 'grid';
 
-    panel.append(search, update, status, grid);
+    panel.append(search, uaSettings, update, status, grid);
     root.append(style, panel);
 
     input.addEventListener('input', () => {
@@ -255,6 +291,24 @@
       picker.seq++;
       setFavoritesView(true);
       renderFavorites(false);
+    });
+    settingsTab.addEventListener('click', () => {
+      uaSettings.hidden = !uaSettings.hidden;
+      settingsTab.setAttribute('aria-expanded', String(!uaSettings.hidden));
+      if (!uaSettings.hidden) uaSelect.focus();
+    });
+    chrome.storage.local.get('commentUserAgent').then(({ commentUserAgent }) => {
+      uaSelect.value = uaOptions.some(([value]) => value === commentUserAgent)
+        ? commentUserAgent
+        : 'iosSafariMobile';
+    }).catch(() => { uaSelect.value = 'iosSafariMobile'; });
+    uaSelect.addEventListener('change', async () => {
+      try {
+        await chrome.storage.local.set({ commentUserAgent: uaSelect.value });
+        setStatus('User agent saved. It applies to future comment and reply requests.', 'success');
+      } catch (e) {
+        setStatus('Could not save the user-agent setting.', 'error');
+      }
     });
     grid.addEventListener('click', (e) => {
       const star = e.target.closest('.star');
