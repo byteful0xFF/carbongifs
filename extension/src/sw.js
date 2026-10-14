@@ -11,7 +11,23 @@
 // be reached.
 
 // updated string
-const SPOOFED_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+const USER_AGENTS = {
+  iosSafariMobile: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Mobile/15E148 Safari/604.1",
+  iosSafariIPad: "Mozilla/5.0 (iPad; CPU OS 18_7_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Mobile/15E148 Safari/604.1",
+  androidChromeMobile: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+  windows11Chrome: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+};
+let commentUserAgent = USER_AGENTS.iosSafariMobile;
+
+// Keep a synchronous copy for the blocking webRequest listener.
+chrome.storage.local.get("commentUserAgent").then(({ commentUserAgent: saved }) => {
+  if (Object.hasOwn(USER_AGENTS, saved)) commentUserAgent = USER_AGENTS[saved];
+}).catch(() => {});
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.commentUserAgent) return;
+  const selected = changes.commentUserAgent.newValue;
+  if (Object.hasOwn(USER_AGENTS, selected)) commentUserAgent = USER_AGENTS[selected];
+});
 
 const TENOR = 'https://tenor.com';
 const TENOR_API = 'https://tenor.googleapis.com/v2';
@@ -68,7 +84,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       const headers = details.requestHeaders
       const ua = headers.find(h => h.name.toLowerCase() === "user-agent")
       if (ua) {
-        ua.value = SPOOFED_UA
+        ua.value = commentUserAgent
       } else {
         console.warn("Desktop GIFs - User Agent couldnt be found to spoof") // hey rayytor, you can replace this warning with whatever sounds best to you
       }
