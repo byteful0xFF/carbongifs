@@ -693,9 +693,44 @@
   }
 
   function setChipStatus(att, text, kind) {
-    att.status.textContent = text || '';
+    att.status.replaceChildren();
+    const message = document.createElement('span');
+    message.textContent = text || '';
+    att.status.append(message);
     if (kind) att.status.dataset.kind = kind;
     else delete att.status.dataset.kind;
+
+    // If sending fails, expose the direct Tenor media URL for troubleshooting
+    // or manual use. Keep it hidden unless the user asks to view it.
+    if (kind === 'error' && att.gif && typeof att.gif.preview === 'string') {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'gcfy-view-gif-string';
+      toggle.textContent = 'View GIF string';
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const existing = att.status.querySelector('.gcfy-gif-string');
+        if (existing) {
+          existing.remove();
+          toggle.textContent = 'View GIF string';
+          return;
+        }
+        const value = document.createElement('textarea');
+        value.className = 'gcfy-gif-string';
+        value.readOnly = true;
+        value.rows = 3;
+        value.value = att.gif.preview;
+        value.setAttribute('aria-label', 'GIF URL string');
+        value.style.cssText = 'display:block;box-sizing:border-box;width:100%;max-width:420px;margin-top:6px;padding:6px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:12px/1.4 monospace;resize:vertical;overflow-wrap:anywhere;';
+        att.status.append(value);
+        value.focus();
+        value.select();
+        toggle.textContent = 'Hide GIF string';
+      });
+      toggle.style.cssText = 'display:inline-block;margin:6px 0 0 6px;padding:3px 8px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:inherit;cursor:pointer;';
+      att.status.append(toggle);
+    }
   }
 
   async function post(box) {
