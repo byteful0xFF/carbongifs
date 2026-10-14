@@ -2,7 +2,7 @@
   <img src="extension/icons/icon-128.png" width="96" height="96" alt="Desktop GIFs icon">
 </p>
 
-<h1 align="center">Desktop GIFs</h1>
+<h1 align="center">Carbon's YTG (YouTube GIFs)</h1>
 
 <p align="center">
   <strong>Post GIFs in YouTube comments and replies from a desktop browser.</strong>
@@ -173,6 +173,6 @@ There is no build step and there are no dependencies: the `extension` folder is 
 
 ## License
 
-Copyright (C) 2026 rayytor
+Copyright (C) 2026 rayytor, byteful0xFF
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3. It is distributed without any warranty. See [LICENSE](LICENSE).
